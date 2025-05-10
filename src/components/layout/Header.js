@@ -18,6 +18,7 @@ import {
   ListItemText,
   ListItemIcon,
   Divider,
+  TextField,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -29,6 +30,7 @@ import {
   Login as LoginIcon,
   Logout as LogoutIcon,
   AccountCircle,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import { styled, useTheme } from "@mui/material/styles";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -83,6 +85,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const { mode, colorMode } = useContext(ThemeContext);
   const { isAuthenticated, user, logout } = useContext(AuthContext);
   const { lastSearchedMovie } = useContext(MovieContext);
@@ -109,11 +112,22 @@ const Header = () => {
     setDrawerOpen(open);
   };
 
+  const toggleSearchDrawer = (open) => (event) => {
+    if (
+      event.type === "keydown" &&
+      (event.key === "Tab" || event.key === "Shift")
+    ) {
+      return;
+    }
+    setSearchDrawerOpen(open);
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
+      setSearchDrawerOpen(false);
     }
   };
 
@@ -183,6 +197,49 @@ const Header = () => {
     </Box>
   );
 
+  const searchDrawer = (
+    <Box
+      sx={{
+        width: "100%",
+        p: 2,
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+      }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}>
+        <Typography variant="h6">Search Movies</Typography>
+        <IconButton onClick={toggleSearchDrawer(false)} color="inherit">
+          <CloseIcon />
+        </IconButton>
+      </Box>
+      <form onSubmit={handleSearch}>
+        <TextField
+          fullWidth
+          autoFocus
+          placeholder={
+            lastSearchedMovie
+              ? `Last search: ${lastSearchedMovie}`
+              : "Search movies..."
+          }
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            endAdornment: (
+              <IconButton type="submit" color="primary">
+                <SearchIcon />
+              </IconButton>
+            ),
+          }}
+        />
+      </form>
+    </Box>
+  );
+
   return (
     <AppBar position="sticky" elevation={0}>
       <Toolbar>
@@ -202,34 +259,50 @@ const Header = () => {
           component={Link}
           to="/"
           sx={{
-            flexGrow: isMobile ? 0 : 1,
+            flexGrow: isMobile ? 1 : 1,
             textDecoration: "none",
             color: "inherit",
             display: "flex",
             alignItems: "center",
+            fontSize: isMobile ? "1rem" : "1.25rem",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            maxWidth: isMobile ? "none" : "none",
           }}>
-          <MovieIcon sx={{ mr: 1 }} />
-          {!isMobile && "Movie Explorer"}
+          <MovieIcon sx={{ mr: 1, fontSize: isMobile ? "1.5rem" : "2rem" }} />
+          Movie Explorer
         </Typography>
 
         {!isAuthPage && (
-          <form onSubmit={handleSearch} style={{ flexGrow: isMobile ? 1 : 0 }}>
-            <SearchWrapper className="search-bar">
-              <SearchIconWrapper>
+          <>
+            {isMobile ? (
+              <IconButton
+                color="inherit"
+                onClick={toggleSearchDrawer(true)}
+                sx={{ ml: 1 }}>
                 <SearchIcon />
-              </SearchIconWrapper>
-              <StyledInputBase
-                placeholder={
-                  lastSearchedMovie
-                    ? `Last search: ${lastSearchedMovie}`
-                    : "Search…"
-                }
-                inputProps={{ "aria-label": "search" }}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </SearchWrapper>
-          </form>
+              </IconButton>
+            ) : (
+              <form onSubmit={handleSearch} style={{ flexGrow: 0 }}>
+                <SearchWrapper className="search-bar">
+                  <SearchIconWrapper>
+                    <SearchIcon />
+                  </SearchIconWrapper>
+                  <StyledInputBase
+                    placeholder={
+                      lastSearchedMovie
+                        ? `Last search: ${lastSearchedMovie}`
+                        : "Search…"
+                    }
+                    inputProps={{ "aria-label": "search" }}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </SearchWrapper>
+              </form>
+            )}
+          </>
         )}
 
         <IconButton
@@ -303,6 +376,18 @@ const Header = () => {
       </Toolbar>
       <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
         {drawer}
+      </Drawer>
+      <Drawer
+        anchor="top"
+        open={searchDrawerOpen}
+        onClose={toggleSearchDrawer(false)}
+        PaperProps={{
+          sx: {
+            width: "100%",
+            maxHeight: "200px",
+          },
+        }}>
+        {searchDrawer}
       </Drawer>
     </AppBar>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Container, Typography, Link as MuiLink, IconButton } from '@mui/material';
-import { GitHub, Twitter, LinkedIn } from '@mui/icons-material';
+import { GitHub, LinkedIn } from '@mui/icons-material';
 
 const Footer = () => {
   return (
@@ -39,7 +39,7 @@ const Footer = () => {
                 aria-label="github" 
                 color="inherit"
                 component="a"
-                href="https://github.com"
+                href="https://github.com/NadeeshaAbey"
                 target="_blank"
                 rel="noopener"
               >
@@ -47,21 +47,10 @@ const Footer = () => {
               </IconButton>
               <IconButton 
                 size="small" 
-                aria-label="twitter" 
-                color="inherit"
-                component="a"
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener"
-              >
-                <Twitter fontSize="small" />
-              </IconButton>
-              <IconButton 
-                size="small" 
                 aria-label="linkedin" 
                 color="inherit"
                 component="a"
-                href="https://linkedin.com"
+                href="linkedin.com/in/nadeesha-abeywickrama-286688231"
                 target="_blank"
                 rel="noopener"
               >
