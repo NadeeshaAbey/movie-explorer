@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// Replace with your TMDb API key
-const API_KEY = "e861a86c233092f2825331522230a6e9";
+// Get API key from environment variable
+const API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 
