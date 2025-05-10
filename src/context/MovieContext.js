@@ -29,7 +29,7 @@ export const MovieProvider = ({ children }) => {
   const [filters, setFilters] = useState({
     genres: [],
     year: "",
-    rating: "",
+    rating: 0,
     sortBy: "popularity.desc",
   });
   const { user } = useContext(AuthContext);
@@ -71,55 +71,92 @@ export const MovieProvider = ({ children }) => {
     }
   }, [lastSearchedMovie]);
 
+  const transformFilters = useCallback((filters) => {
+    const transformedFilters = {
+      sort_by: filters.sortBy,
+    };
+
+    if (filters.genres.length > 0) {
+      transformedFilters.with_genres = filters.genres.join(",");
+    }
+
+    if (filters.year) {
+      transformedFilters.primary_release_year = filters.year;
+    }
+
+    if (filters.rating > 0) {
+      transformedFilters["vote_average.gte"] = filters.rating;
+    }
+
+    return transformedFilters;
+  }, []);
+
   const loadMovies = useCallback(
-    async (type = "all", pageNum = 1) => {
-      setLoading(true);
-      setError(null);
+    async (type = "all", filters = {}, pageNum = 1) => {
       try {
+        setLoading(true);
+        setError(null);
         let response;
+
         switch (type) {
           case "trending":
             response = await fetchTrendingMovies(pageNum);
             break;
-          case "topRated":
+          case "top_rated":
             response = await fetchTopRatedMovies(pageNum);
             break;
-          case "nowPlaying":
+          case "now_playing":
             response = await fetchNowPlayingMovies(pageNum);
             break;
           case "upcoming":
             response = await fetchUpcomingMovies(pageNum);
             break;
           default:
-            response = await filterMovies(filters, pageNum);
+            response = await filterMovies(transformFilters(filters), pageNum);
         }
-        setMovies(response.results);
-        setTotalPages(response.total_pages);
-        setPage(pageNum);
-        setCurrentTab(type);
+
+        if (response) {
+          setMovies((prevMovies) =>
+            pageNum === 1
+              ? response.results
+              : [...prevMovies, ...response.results]
+          );
+          setPage(pageNum);
+          setTotalPages(response.total_pages);
+          setCurrentTab(type);
+        }
       } catch (err) {
-        setError(err.message);
+        setError("Failed to load movies");
+        console.error(err);
       } finally {
         setLoading(false);
       }
     },
-    [filters]
+    []
   );
 
   const handleSearch = useCallback(async (query, pageNum = 1) => {
     if (!query.trim()) return;
 
-    setLoading(true);
-    setError(null);
     try {
+      setLoading(true);
+      setError(null);
       const response = await searchMovies(query, pageNum);
-      setMovies(response.results);
-      setTotalPages(response.total_pages);
-      setPage(pageNum);
-      setCurrentTab("search");
-      setLastSearchedMovie(query);
+
+      if (response) {
+        setMovies((prevMovies) =>
+          pageNum === 1
+            ? response.results
+            : [...prevMovies, ...response.results]
+        );
+        setTotalPages(response.total_pages);
+        setPage(pageNum);
+        setCurrentTab("search");
+        setLastSearchedMovie(query);
+      }
     } catch (err) {
-      setError(err.message);
+      setError("Failed to search movies");
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -129,15 +166,35 @@ export const MovieProvider = ({ children }) => {
     (newFilters) => {
       setFilters(newFilters);
       setPage(1);
-      loadMovies("all", 1);
+      loadMovies(currentTab, newFilters, 1);
     },
-    [loadMovies]
+    [loadMovies, currentTab]
   );
 
+  // Load movies when tab changes
   useEffect(() => {
-    // Load all movies by default
-    loadMovies("all", 1);
-  }, [loadMovies]);
+    if (currentTab === "all") {
+      loadMovies("all", filters, 1);
+    } else if (currentTab === "trending") {
+      loadMovies("trending", {}, 1);
+    } else if (currentTab === "top_rated") {
+      loadMovies("top_rated", {}, 1);
+    } else if (currentTab === "now_playing") {
+      loadMovies("now_playing", {}, 1);
+    } else if (currentTab === "upcoming") {
+      loadMovies("upcoming", {}, 1);
+    }
+  }, [currentTab, loadMovies, filters]);
+
+  // Initial load
+  useEffect(() => {
+    loadMovies("all", filters, 1);
+  }, [loadMovies, filters]);
+
+  const handleTabChange = useCallback((newTab) => {
+    setCurrentTab(newTab);
+    setPage(1);
+  }, []);
 
   const addToFavorites = useCallback((movie) => {
     setFavorites((prevFavorites) => {
@@ -187,6 +244,7 @@ export const MovieProvider = ({ children }) => {
         loadMovies,
         handleFilterChange,
         handleSearch,
+        handleTabChange,
         addToFavorites,
         removeFromFavorites,
         isFavorite,

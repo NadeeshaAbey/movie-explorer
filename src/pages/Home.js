@@ -31,16 +31,20 @@ const Home = () => {
     setTabValue(newValue);
     if (newValue === 1) {
       // If trending tab is selected, load trending movies
-      loadMovies("trending", 1, true);
+      loadMovies("trending", {}, 1);
     } else {
-      // For other tabs, load all movies
-      loadMovies("all", 1, true);
+      // For other tabs, load all movies with filters
+      loadMovies("all", filters, 1);
     }
   };
 
   const handleLoadMore = () => {
     if (page < totalPages) {
-      loadMovies(currentTab, page + 1);
+      if (currentTab === "all") {
+        loadMovies("all", filters, page + 1);
+      } else {
+        loadMovies(currentTab, {}, page + 1);
+      }
     }
   };
 

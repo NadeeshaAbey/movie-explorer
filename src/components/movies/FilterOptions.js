@@ -11,13 +11,21 @@ import {
   Grid,
   Button,
   Chip,
+  IconButton,
+  Drawer,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
+import { FilterList as FilterIcon } from "@mui/icons-material";
 import { getGenres } from "../../services/api";
 
 const FilterOptions = ({ onFilterChange, selectedFilters }) => {
   const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   // Get current year for year range
   const currentYear = new Date().getFullYear();
@@ -60,7 +68,7 @@ const FilterOptions = ({ onFilterChange, selectedFilters }) => {
 
   const handleRatingChange = useCallback(
     (event, newValue) => {
-      onFilterChange({ ...selectedFilters, rating: newValue });
+      onFilterChange({ ...selectedFilters, rating: Number(newValue) });
     },
     [onFilterChange, selectedFilters]
   );
@@ -81,24 +89,18 @@ const FilterOptions = ({ onFilterChange, selectedFilters }) => {
     });
   }, [onFilterChange]);
 
-  if (loading) {
-    return (
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography>Loading filter options...</Typography>
-      </Paper>
-    );
-  }
+  const toggleDrawer = (open) => (event) => {
+    if (
+      event.type === "keydown" &&
+      (event.key === "Tab" || event.key === "Shift")
+    ) {
+      return;
+    }
+    setDrawerOpen(open);
+  };
 
-  if (error) {
-    return (
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography color="error">{error}</Typography>
-      </Paper>
-    );
-  }
-
-  return (
-    <Paper sx={{ p: 2, mb: 3 }}>
+  const filterContent = (
+    <Box sx={{ p: 2 }}>
       <Box
         sx={{
           mb: 2,
@@ -112,12 +114,13 @@ const FilterOptions = ({ onFilterChange, selectedFilters }) => {
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {/* Genre Filter */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <FormControl fullWidth>
             <InputLabel>Genres</InputLabel>
             <Select
+              label="Genres"
               multiple
               value={selectedFilters.genres}
               onChange={handleGenreChange}
@@ -142,7 +145,7 @@ const FilterOptions = ({ onFilterChange, selectedFilters }) => {
         </Grid>
 
         {/* Year Filter */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <FormControl fullWidth>
             <InputLabel>Year</InputLabel>
             <Select
@@ -162,7 +165,7 @@ const FilterOptions = ({ onFilterChange, selectedFilters }) => {
         {/* Rating Filter */}
         <Grid item xs={12}>
           <Typography gutterBottom>
-            Minimum Rating: {selectedFilters.rating}
+            Minimum Rating: {selectedFilters.rating.toFixed(1)}
           </Typography>
           <Slider
             value={selectedFilters.rating}
@@ -196,8 +199,50 @@ const FilterOptions = ({ onFilterChange, selectedFilters }) => {
           </FormControl>
         </Grid>
       </Grid>
-    </Paper>
+    </Box>
   );
+
+  if (loading) {
+    return (
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography>Loading filter options...</Typography>
+      </Paper>
+    );
+  }
+
+  if (error) {
+    return (
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography color="error">{error}</Typography>
+      </Paper>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<FilterIcon />}
+            onClick={toggleDrawer(true)}>
+            Filters
+          </Button>
+        </Box>
+        <Drawer
+          anchor="right"
+          open={drawerOpen}
+          onClose={toggleDrawer(false)}
+          PaperProps={{
+            sx: { width: "100%", maxWidth: 400 },
+          }}>
+          {filterContent}
+        </Drawer>
+      </>
+    );
+  }
+
+  return <Paper sx={{ p: 2, mb: 3 }}>{filterContent}</Paper>;
 };
 
 export default FilterOptions;
